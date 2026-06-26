@@ -5,13 +5,13 @@
 ## Clone the Repository
 
 ```bash
-git -c http.proxy=http://rb-proxy-de.bosch.com:8080 clone https://github.boschdevcloud.com/GSO3KOR/GMSENS.git
+git clone https://github.com/Shwetam1919/SENS_AIBoat.git
 ```
 
 ## Navigate to Repository
 
 ```bash
-cd GMSENS
+cd SENS_AIBoat
 ```
 
 ## Update Files
@@ -33,13 +33,13 @@ git add .
 ## Commit Changes
 
 ```bash
-git commit -m "Updated chatbot and proxy files"
+git commit -m "Updated files"
 ```
 
 ## Pull Latest Changes
 
 ```bash
-git -c http.proxy=http://rb-proxy-de.bosch.com:8080 pull origin main
+git pull origin main
 ```
 
 If you encounter merge conflicts, resolve them and continue.
@@ -49,13 +49,13 @@ If you encounter merge conflicts, resolve them and continue.
 Normal push:
 
 ```bash
-git -c http.proxy=http://rb-proxy-de.bosch.com:8080 -c https.proxy=http://rb-proxy-de.bosch.com:8080 push origin main
+git push origin main
 ```
 
 If the push is rejected because the remote history has diverged and you want to overwrite the remote branch:
 
 ```bash
-git -c http.proxy=http://rb-proxy-de.bosch.com:8080 -c https.proxy=http://rb-proxy-de.bosch.com:8080 push --force-with-lease origin main
+git push --force-with-lease origin main
 ```
 
 ---
