@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GMVCU SENS BOT</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1117;--bg2:#161B22;--bg3:#21262D;--bg4:#2D333B;
+  --border:#30363D;--border2:#444C56;
+  --accent:#2F81F7;--accent-hover:#388BFD;
+  --green:#3FB950;--red:#F85149;--amber:#D29922;--purple:#BC8CFF;
+  --txt:#E6EDF3;--txt2:#8B949E;--txt3:#6E7681;
+  --blue:#58A6FF;--user-bg:#1C3557;--bot-bg:#161B22;
+  --agent-thought-bg:#1f242c;
+  --radius:10px;--radius-sm:6px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --mono:'SF Mono','Fira Code',Consolas,monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:14px}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;min-height:52px}
+.logo-svg{width:36px;height:36px;flex-shrink:0;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(47,129,247,.35)}
+.title-block .t1{font-size:14px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:6px}
+.title-block .t2{font-size:11px;color:var(--txt3)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;display:inline-flex;align-items:center;gap:4px;cursor:default;transition:all .3s}
+.badge-online{background:#0d2818;color:var(--green);border:1px solid #1a4a2e}
+.badge-offline{background:#2a1215;color:var(--red);border:1px solid #4a1a1e}
+.badge-checking{background:#1e1a0d;color:var(--amber);border:1px solid #4a3a0e}
+.online-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.model-select{background:var(--bg3);border:1px solid var(--border);color:var(--txt);font-size:11px;padding:3px 6px;border-radius:6px;cursor:pointer;outline:none}
+.model-select:focus{border-color:var(--accent)}
+.new-chat-btn{background:var(--bg3);border:1px solid var(--border);color:var(--txt2);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .15s}
+.new-chat-btn:hover{background:var(--bg4);color:var(--txt);border-color:var(--border2)}
+.agent-mode-selector{display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px;gap:2px}
+.agent-toggle{background:none;border:none;color:var(--txt3);font-size:11px;padding:2px 8px;border-radius:4px;cursor:pointer;font-weight:500;transition:all 0.15s}
+.agent-toggle.active{background:var(--accent);color:#fff;font-weight:600}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.s-sec{padding:12px 12px 4px}
+.s-label{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.scope-btn{display:flex;align-items:center;gap:8px;width:100%;padding:6px 9px;background:none;border:none;border-radius:var(--radius-sm);color:var(--txt2);font-size:12.5px;cursor:pointer;text-align:left;transition:background .12s,color .12s}
+.scope-btn:hover{background:var(--bg3);color:var(--txt)}
+.scope-btn.active{background:var(--bg3);color:var(--txt);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.d-all{background:var(--amber)}.d-11{background:var(--blue)}.d-15{background:var(--green)}
+.divider{height:1px;background:var(--border);margin:6px 12px}
+.qq{display:block;width:100%;padding:5px 9px;margin:1px 0;background:none;border:none;border-radius:var(--radius-sm);color:var(--blue);font-size:11.5px;text-align:left;cursor:pointer;transition:background .12s;line-height:1.4}
+.qq:hover{background:var(--bg3);color:var(--txt)}
+
+/* history list */
+.hist-item{display:flex;align-items:center;gap:6px;width:100%;padding:5px 9px;margin:1px 0;background:none;border:none;border-radius:var(--radius-sm);color:var(--txt2);font-size:11.5px;text-align:left;cursor:pointer;transition:background .12s;line-height:1.4}
+.hist-item:hover{background:var(--bg3);color:var(--txt)}
+.hist-item.active{background:var(--bg3);color:var(--accent);font-weight:600}
+.hist-del{margin-left:auto;background:none;border:none;color:var(--txt3);cursor:pointer;font-size:12px;padding:0 2px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.hist-item:hover .hist-del{opacity:1}
+.hist-del:hover{color:var(--red)}
+.hist-empty{font-size:11px;color:var(--txt3);padding:4px 9px;font-style:italic}
+
+.proxy-status-box{border-top:1px solid var(--border);padding:10px 12px}
+.proxy-status-box .ps-title{font-size:10px;color:var(--txt2);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.proxy-status-row{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--txt2);margin-top:3px}
+.proxy-dot{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex-shrink:0;transition:background .3s}
+.proxy-dot.ok{background:var(--green)}.proxy-dot.err{background:var(--red)}.proxy-dot.chk{background:var(--amber);animation:pulse 1.5s infinite}
+
+/* setup command box */
+.setup-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin:0 12px 8px;font-size:10.5px;color:var(--txt2)}
+.setup-box .sb-title{font-size:10px;color:var(--txt3);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.setup-cmd{font-family:var(--mono);font-size:10px;color:var(--green);background:#0d1f0d;border:1px solid #1a3a1a;border-radius:4px;padding:4px 6px;margin:3px 0;display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;transition:background .15s;word-break:break-all}
+.setup-cmd:hover{background:#132613}
+.setup-cmd-copy{font-size:9px;color:var(--txt3);flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--txt3)}
+.setup-cmd-copy:hover{color:var(--green)}
+.setup-link{display:block;font-family:var(--mono);font-size:10px;color:var(--blue);margin-top:4px;text-decoration:none}
+.setup-link:hover{text-decoration:underline}
+
+/* ── SWCDD LOADER ── */
+.swcdd-slot{display:flex;align-items:center;gap:6px;width:100%;padding:6px 9px;background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--radius-sm);color:var(--txt2);font-size:11px;cursor:pointer;transition:all .15s;text-align:left;margin:3px 0}
+.swcdd-slot:hover{background:var(--bg4);border-color:var(--accent);color:var(--txt)}
+.swcdd-slot.loaded{border-style:solid;border-color:var(--green);background:#0d2818;color:var(--green)}
+.swcdd-slot .swcdd-icon{font-size:14px;flex-shrink:0}
+.swcdd-slot .swcdd-info{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+.swcdd-slot .swcdd-name{font-weight:600;font-size:11px}
+.swcdd-slot .swcdd-status{font-size:9px;color:var(--txt3);display:block}
+.swcdd-slot.loaded .swcdd-status{color:var(--green)}
+.swcdd-rm{background:none;border:none;color:var(--txt3);font-size:12px;cursor:pointer;padding:0 2px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.swcdd-slot:hover .swcdd-rm{opacity:1}
+.swcdd-rm:hover{color:var(--red)}
+.swcdd-token-count{font-size:9px;color:var(--txt3);padding:2px 9px;font-style:italic}
+
+/* ── CHAT AREA ── */
+.chat-area{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:5px}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{display:flex;flex-direction:column;max-width:85%}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.bot{align-self:flex-start;align-items:flex-start;max-width:90%}
+.bubble{padding:10px 14px;border-radius:var(--radius);font-size:13.5px;line-height:1.65;word-break:break-word}
+.msg.user .bubble{background:var(--user-bg);color:#93C5FD;border-bottom-right-radius:3px;border:1px solid #1e3f6a}
+.msg.bot .bubble{background:var(--bot-bg);color:var(--txt);border-bottom-left-radius:3px;border:1px solid var(--border);width:100%}
+.msg-meta{font-size:10px;color:var(--txt3);margin-top:3px;padding:0 4px}
+.src-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.src-tag{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg3);color:var(--txt2);border:1px solid var(--border)}
+.agent-thought-block{width:100%;background:var(--agent-thought-bg);border-left:2px solid var(--purple);padding:8px 12px;margin-bottom:8px;border-radius:4px;font-size:12px;color:var(--txt2)}
+.agent-thought-header{font-family:var(--mono);color:var(--purple);font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:0.05em}
+.agent-thought-step{display:flex;align-items:flex-start;gap:6px;margin-top:3px;font-family:var(--mono)}
+.agent-thought-step .step-dot{color:var(--green)}
+.bubble h1,.bubble h2,.bubble h3{color:var(--blue);margin:10px 0 4px;font-size:13.5px}
+.bubble h1{font-size:15px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.bubble h2{font-size:14px}
+.bubble ul,.bubble ol{margin:6px 0 6px 18px}
+.bubble li{margin:3px 0;line-height:1.55}
+.bubble strong{color:var(--txt);font-weight:600}
+.bubble em{color:var(--txt2);font-style:italic}
+.bubble code{background:rgba(110,118,129,.2);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:12px;color:#e2a76f}
+.bubble pre{background:#0d1117;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin:8px 0;overflow-x:auto}
+.bubble pre code{background:none;padding:0;color:#e6edf3;font-size:12px}
+.bubble blockquote{border-left:3px solid var(--accent);padding:4px 10px;margin:6px 0;color:var(--txt2);background:rgba(47,129,247,.06);border-radius:0 4px 4px 0}
+.bubble table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.5px}
+.bubble th{background:var(--bg3);padding:6px 10px;text-align:left;border:1px solid var(--border);color:var(--blue);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+.bubble td{padding:5px 10px;border:1px solid var(--border);color:var(--txt)}
+.bubble tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.bubble .diagram-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin:8px 0;font-family:var(--mono);font-size:11.5px;color:var(--green);white-space:pre;overflow-x:auto;line-height:1.5}
+.bubble hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.bubble a{color:var(--blue);text-decoration:none}
+.bubble a:hover{text-decoration:underline}
+.bubble .png-out{max-width:100%;border-radius:6px;border:1px solid var(--border);margin:8px 0;display:block}
+.bubble .puml-dl{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--blue);text-decoration:none;margin-top:4px}
+.bubble .puml-dl:hover{text-decoration:underline}
+/* error log highlight */
+.bubble .log-error{color:var(--red);background:rgba(248,81,73,.08);border-radius:3px;padding:1px 4px}
+.bubble .log-warn{color:var(--amber);background:rgba(210,153,34,.08);border-radius:3px;padding:1px 4px}
+
+.pre-wrap{position:relative;margin:8px 0}
+.pre-wrap pre{margin:0}
+.copy-btn{position:absolute;top:6px;right:6px;background:var(--bg4);border:1px solid var(--border);color:var(--txt2);font-size:10px;padding:2px 7px;border-radius:4px;cursor:pointer;opacity:0;transition:opacity .15s}
+.pre-wrap:hover .copy-btn{opacity:1}
+.copy-btn:hover{color:var(--txt)}
+.agent-live-status{font-family:var(--mono);font-size:11px;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.typing-dots{display:flex;gap:5px;align-items:center;padding:4px 2px}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:blink 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* ── INPUT ROW ── */
+.input-row{padding:10px 16px 14px;border-top:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;gap:8px}
+.input-top{display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--txt);font-family:var(--font);font-size:13.5px;padding:9px 13px;resize:none;min-height:40px;max-height:120px;outline:none;transition:border-color .15s;line-height:1.5}
+.chat-input:focus{border-color:var(--accent)}
+.chat-input::placeholder{color:var(--txt3)}
+.send-btn{width:38px;height:38px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s,transform .1s,background .15s}
+.send-btn:hover{background:var(--accent-hover)}
+.send-btn:active{transform:scale(.93)}
+.send-btn:disabled{opacity:.3;cursor:default}
+.send-btn svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.input-hints{display:flex;gap:6px;flex-wrap:wrap}
+.hint-chip{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);color:var(--txt2);cursor:pointer;transition:all .12s}
+.hint-chip:hover{background:var(--user-bg);color:#93C5FD;border-color:#1e3f6a}
+.attach-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.attach-btn{background:var(--bg3);border:1px solid var(--border);color:var(--txt2);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.attach-btn:hover{background:var(--bg4);color:var(--txt);border-color:var(--border2)}
+.attach-sep{width:1px;height:16px;background:var(--border)}
+.img-preview-wrap{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px}
+.img-preview-wrap img{height:36px;border-radius:4px;object-fit:cover}
+.img-preview-label{font-size:11px;color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.img-preview-rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px}
+.file-preview-wrap{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px}
+.file-preview-icon{font-size:18px}
+.file-preview-label{font-size:11px;color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-preview-rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px}
+.token-info{font-size:10px;color:var(--txt3);text-align:right;padding:0 2px}
+
+/* ── EMPTY STATE ── */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--txt2);text-align:center;padding:32px}
+.empty-icon{font-size:36px;margin-bottom:4px}
+.empty-title{font-size:17px;font-weight:700;color:var(--txt)}
+.empty-sub{font-size:13px;line-height:1.7;max-width:420px;color:var(--txt2)}
+.cap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;max-width:480px;width:100%}
+.cap-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+.cap-card:hover{background:var(--bg3);border-color:var(--accent)}
+.cap-card .c-icon{font-size:16px;margin-bottom:4px}
+.cap-card .c-title{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.cap-card .c-desc{font-size:11px;color:var(--txt2);line-height:1.4}
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;width:600px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;gap:12px}
+.modal-title{font-size:14px;font-weight:700;color:var(--txt);display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--txt)}
+.puml-textarea{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--txt);font-family:var(--mono);font-size:12px;padding:10px;resize:none;outline:none;min-height:220px;transition:border-color .15s}
+.puml-textarea:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.btn-primary{background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:600;padding:7px 16px;border-radius:6px;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:disabled{opacity:.4;cursor:default}
+.btn-sec{background:var(--bg3);border:1px solid var(--border);color:var(--txt2);font-size:12px;padding:7px 14px;border-radius:6px;cursor:pointer}
+.btn-sec:hover{background:var(--bg4);color:var(--txt)}
+
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <!-- SVG Logo / Profile pic -->
+  <svg class="logo-svg" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1a1f2e"/>
+        <stop offset="100%" style="stop-color:#0d1117"/>
+      </linearGradient>
+      <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#BC8CFF"/>
+        <stop offset="100%" style="stop-color:#2F81F7"/>
+      </linearGradient>
+    </defs>
+    <rect width="36" height="36" fill="url(#lg1)"/>
+    <!-- Satellite dish base -->
+    <circle cx="18" cy="21" r="8" fill="none" stroke="url(#lg2)" stroke-width="1.5" opacity="0.4"/>
+    <circle cx="18" cy="21" r="5" fill="none" stroke="url(#lg2)" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="18" cy="21" r="2.2" fill="url(#lg2)"/>
+    <!-- Signal lines -->
+    <line x1="18" y1="21" x2="18" y2="8" stroke="url(#lg2)" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="18" y1="8" x2="13" y2="14" stroke="url(#lg2)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+    <line x1="18" y1="8" x2="23" y2="14" stroke="url(#lg2)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+    <!-- Pulse rings -->
+    <circle cx="18" cy="8" r="2" fill="#2F81F7" opacity="0.9"/>
+    <circle cx="18" cy="8" r="3.5" fill="none" stroke="#2F81F7" stroke-width="0.8" opacity="0.5"/>
+  </svg>
+  <div class="title-block">
+    <div class="t1">GMVCU SENS BOT <span style="font-size:10px;background:#1a2a40;color:var(--blue);padding:1px 6px;border-radius:4px;border:1px solid #2a4a70;font-weight:500">AGENT</span></div>
+    <div class="t2">MS/ENE-CF8-XC · VCU 1.1 &amp; 1.5 · SWCDD v4.0 + Common Mainline v1.0</div>
+  </div>
+  <div class="topbar-right">
+    <div class="agent-mode-selector">
+      <button id="agtStandard" class="agent-toggle" onclick="toggleAgentMode('standard')">Standard</button>
+      <button id="agtReasoning" class="agent-toggle active" onclick="toggleAgentMode('agent')">Agent Engine</button>
+    </div>
+    <select class="model-select" id="modelSel" onchange="onModelChange()">
+      <option value="gpt-5-nano-2025-08-07">BMF · gpt-5-nano</option>
+      <option value="gpt-4o-2024-11-20" selected>BMF · gpt-4o</option>
+      <option value="gpt-4o-mini-2024-07-18">BMF · gpt-4o-mini</option>
+      <option value="o3-mini-2025-01-31">BMF · o3-mini</option>
+    </select>
+    <span class="badge badge-online" id="statusBadge">
+      <span class="online-dot"></span><span id="statusText">Online</span>
+    </span>
+    <button class="new-chat-btn" onclick="newChat()">+ New chat</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="s-sec">
+      <div class="s-label">Scope</div>
+      <button class="scope-btn active" data-s="both" onclick="setScope('both')"><span class="dot d-all"></span>All components</button>
+      <button class="scope-btn" data-s="vcu11" onclick="setScope('vcu11')"><span class="dot d-11"></span>VCU 1.1 only</button>
+      <button class="scope-btn" data-s="vcu15" onclick="setScope('vcu15')"><span class="dot d-15"></span>VCU 1.5 only</button>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Chat History -->
+    <div class="s-sec">
+      <div class="s-label" style="display:flex;align-items:center;justify-content:space-between">
+        History
+        <button onclick="clearAllHistory()" style="background:none;border:none;color:var(--txt3);font-size:10px;cursor:pointer;padding:0" title="Clear all history">✕ Clear</button>
+      </div>
+      <div id="histList"><div class="hist-empty">No chats yet</div></div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="s-sec">
+      <div class="s-label">Quick Actions</div>
+      <button class="qq" onclick="askQ('Give me the exact DLT commands to enable RTC, GyroAcc and WhlTicks driver logs.')">Enable DLT logs</button>
+      <button class="qq" onclick="askQ('Explain IsRTCRunning() behavior across all boot scenarios (cold/warm/wakeup/VLF).')">IsRTCRunning flow?</button>
+      <button class="qq" onclick="askQ('What is the rtcProxyBuffer race condition, VLF flag issue, and how was it fixed?')">rtcProxyBuffer race?</button>
+      <button class="qq" onclick="askQ('Summarize the RTC alarm expiry bug RTC1-2951064 and INFGBP-49014 wrong year bug.')">RTC bugs summary</button>
+      <button class="qq" onclick="askQ('Explain RTC proximity avoidance logic and SRT alignment mechanism.')">RTC alignment logic?</button>
+      <button class="qq" onclick="askQ('What are all WheelTick DLT injection sequence IDs and ESF-MEAS payload format?')">WheelTick sequences?</button>
+    </div>
+    <div class="divider"></div>
+    <div class="s-sec">
+      <div class="s-label">GNSS &amp; Sensors</div>
+      <button class="qq" onclick="askQ('What is the difference between VCU 1.1 and VCU 1.5 GNSS HAL? Include chip, FW, and interface differences.')">VCU 1.1 vs 1.5 HAL?</button>
+      <button class="qq" onclick="askQ('How does runtime GNSS variant detection work using MON-LLC and CFG-OTP?')">GNSS variant detect?</button>
+      <button class="qq" onclick="askQ('List all calibration override files and their GNSS_DR_SRC / SENS_IMU_SRC values.')">Calibration IDs table</button>
+      <button class="qq" onclick="askQ('How do I apply calibration override to switch HAL variant? Give ADB commands.')">Apply cal override?</button>
+      <button class="qq" onclick="askQ('How to set up ADB over Ethernet on GMVCU target?')">ADB over Ethernet</button>
+      <button class="qq" onclick="askQ('Explain GNSS self-test using UBX-CFG-PT2 and MON-PT2. What are the pass/fail criteria?')">GNSS self-test?</button>
+    </div>
+    <div class="divider"></div>
+    <div class="s-sec">
+      <div class="s-label">Diagrams &amp; Code</div>
+      <button class="qq" onclick="askQ('Draw an ASCII flow diagram of RTC_MainFunction 10ms task: async refresh, VLF clear, alignment, timer expiry.')">RTC MainFunction flow</button>
+      <button class="qq" onclick="askQ('Show GMVCU full component architecture: VIP drivers (RTC/WhlTicks/GyroAcc), GNSS HAL, NavSensors HAL, GMLocation HAL as ASCII diagram.')">Full architecture</button>
+      <button class="qq" onclick="askQ('Give example C code for WhlTicks_SetNCRNavSnsrInputData showing ESF-MEAS payload construction.')">WhlTicks ESF-MEAS code</button>
+      <button class="qq" onclick="askQ('Give example GoogleTest unit test for IsRTCRunning() covering VLF, VDET and I2C error scenarios.')">RTC unit test example</button>
+      <button class="qq" onclick="askQ('How does Ethernet switch 88Q5054 firmware update work? Give all commands for both manual and OTA methods.')">ETH switch FW update</button>
+    </div>
+    <div class="divider"></div>
+    <div class="s-sec">
+      <div class="s-label">u-blox HAL</div>
+      <button class="qq" onclick="askQ('Explain CUbxThread message dispatch loop. What messages does it handle and what are the key GM-specific extensions?')">CUbxThread internals</button>
+      <button class="qq" onclick="askQ('How does baud rate negotiation work for M8 vs M9? What are BAUDRATE_COMM, BAUDRATE_DEF, BAUDRATE_M9_DEF values?')">Baud rate negotiation</button>
+      <button class="qq" onclick="askQ('What is the VCU_COMMON_MAINLINE macro and how does it differentiate M8 vs M9 at compile time?')">VCU_COMMON_MAINLINE macro</button>
+      <button class="qq" onclick="askQ('What are all UBX message class/ID pairs used in GMVCU? Include CFG-PRT, MON-LLC, CFG-OTP, MON-PT2, MON-SPT.')">UBX message IDs</button>
+      <button class="qq" onclick="askQ('Explain M9 CFG-VAL key constants: CFG_RATE_MEAS, CFG_SIGNAL_GPS_ENA, CFG_SFODO_IMU2VRP_LA_X and how they differ from M8 CFG-MSG approach.')">M9 CFG-VAL keys</button>
+    </div>
+    <div class="divider"></div>
+    <div class="s-sec">
+      <div class="s-label">NavSensors HAL</div>
+      <button class="qq" onclick="askQ('Explain SensorDataReader: what are the sensor handles (ACC, GYRO, UNCAL), FMQ usage, and how IMU data flows from VIP to Android sensors HAL?')">SensorDataReader flow</button>
+      <button class="qq" onclick="askQ('What delta-H calibration algorithms are in plugins/calibration/? Explain GyroOffset, AccZOffset, InclHeightEstimator, VelocityScaleFactor.')">Delta-H calibration algos</button>
+      <button class="qq" onclick="askQ('Explain GnssLocationData and GnssLocationDataEth structs. What flags does statusFlags contain?')">GNSS data structs</button>
+      <button class="qq" onclick="askQ('What is PASCDData / $PASCD NMEA sentence used for in GMVCU connected variant?')">PASCD sentence?</button>
+    </div>
+    <div class="divider"></div>
+
+    <!-- SWCDD Documents -->
+    <div class="s-sec">
+      <div class="s-label">SWCDD Documents</div>
+      <div class="swcdd-slot" id="swcddSlotVip" onclick="toggleBuiltinSwcdd('vip')">
+        <span class="swcdd-icon">📘</span>
+        <div class="swcdd-info">
+          <span class="swcdd-name">VIP RTC/GyroAcc/WhlTicks v4.0</span>
+          <span class="swcdd-status">Click to activate</span>
+        </div>
+        <button class="swcdd-rm" onclick="event.stopPropagation();clearSwcdd('vip')" title="Remove">✕</button>
+      </div>
+      <div class="swcdd-slot" id="swcddSlotCm" onclick="toggleBuiltinSwcdd('cm')">
+        <span class="swcdd-icon">📗</span>
+        <div class="swcdd-info">
+          <span class="swcdd-name">Common Mainline v1.0 (u-blox/NavSensors)</span>
+          <span class="swcdd-status">Click to activate</span>
+        </div>
+        <button class="swcdd-rm" onclick="event.stopPropagation();clearSwcdd('cm')" title="Remove">✕</button>
+      </div>
+      <div class="swcdd-slot" id="swcddSlotExtra" onclick="document.getElementById('swcddFileExtra').click()">
+        <span class="swcdd-icon">📄</span>
+        <div class="swcdd-info">
+          <span class="swcdd-name">Upload your own SWCDD</span>
+          <span class="swcdd-status">Click to load .docx / .txt / .pdf</span>
+        </div>
+        <button class="swcdd-rm" onclick="event.stopPropagation();clearSwcdd('extra')" title="Remove">✕</button>
+      </div>
+      <input type="file" id="swcddFileExtra" accept=".docx,.doc,.txt,.pdf" style="display:none" onchange="onSwcddSelected(event,'extra')"/>
+      <div class="swcdd-token-count" id="swcddTokenCount"></div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Setup box -->
+    <div class="s-sec" style="padding-bottom:8px">
+      <div class="s-label">Quick Start</div>
+    </div>
+    <div class="setup-box">
+      <div class="sb-title">1. Set API key &amp; start proxy</div>
+      <div class="setup-cmd" onclick="copyCmd(this)" title="Click to copy">
+        <span>$env:BMF_API_KEY="YOUR_KEY"; python bmf_proxy.py</span>
+        <button class="setup-cmd-copy">⎘</button>
+      </div>
+      <div class="sb-title" style="margin-top:8px">2. Open in browser</div>
+      <a class="setup-link" href="http://localhost:5000/" target="_blank">http://localhost:5000/</a>
+    </div>
+
+    <div class="proxy-status-box">
+      <div class="ps-title">Proxy Status</div>
+      <div class="proxy-status-row"><span class="proxy-dot chk" id="proxyDot"></span><span id="proxyStatusTxt">Checking proxy…</span></div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:5px">Key is read from <code style="font-size:10px">$env:BMF_API_KEY</code> in your shell. No key needed here.</div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div class="chat-area">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">📡</div>
+      <div class="empty-title">GMVCU SENS BOT</div>
+      <div class="empty-sub">Ask about RTC, WheelTicks, GNSS/Sensors HAL, DLT injection, log analysis, architecture, or code examples. Upload logs, docs, or images for analysis.</div>
+      <div class="cap-grid">
+        <div class="cap-card" onclick="askQ('Draw an ASCII architecture diagram of GMVCU showing all HAL layers.')">
+          <div class="c-icon">🗺️</div>
+          <div class="c-title">Architecture Diagrams</div>
+          <div class="c-desc">ASCII flow &amp; component diagrams</div>
+        </div>
+        <div class="cap-card" onclick="askQ('Give example C code for RTC_GetDateTime with async proxy-buffer pattern.')">
+          <div class="c-icon">💻</div>
+          <div class="c-title">Code Examples</div>
+          <div class="c-desc">C/C++ snippets with AUTOSAR style</div>
+        </div>
+        <div class="cap-card" onclick="document.getElementById('docFileIn').click()">
+          <div class="c-icon">📋</div>
+          <div class="c-title">Log · Doc · Source Analysis</div>
+          <div class="c-desc">Upload .log .txt .c .cpp .py — auto-generates unit tests for source files</div>
+        </div>
+        <div class="cap-card" onclick="askQ('Compare VCU 1.1 vs VCU 1.5 in a full table: GNSS chip, IMU, calibration IDs, FW version, interface.')">
+          <div class="c-icon">📊</div>
+          <div class="c-title">Platform Comparison</div>
+          <div class="c-desc">VCU 1.1 vs 1.5 + calibration variant matrix</div>
+        </div>
+        <div class="cap-card" onclick="askQ('Explain CUbxThread internals: message dispatch, GM-specific self-test methods, baud rate negotiation, VCU_COMMON_MAINLINE differences.')">
+          <div class="c-icon">🛰️</div>
+          <div class="c-title">u-blox HAL Internals</div>
+          <div class="c-desc">CUbxThread, CParser, CGnssDriver, M8/M9 config</div>
+        </div>
+        <div class="cap-card" onclick="askQ('Explain NavSensors HAL: SensorDataReader, delta-H calibration algorithms, GnssLocationData struct, PASCD sentence.')">
+          <div class="c-icon">📡</div>
+          <div class="c-title">NavSensors HAL</div>
+          <div class="c-desc">SensorDataReader, calibration plugins, VTS tests</div>
+        </div>
+      </div>
+    </div>
+    <div class="messages" id="msgs" style="display:none"></div>
+
+    <div class="input-row">
+      <div class="input-top">
+        <textarea class="chat-input" id="qi" rows="1" placeholder="Ask about RTC/WhlTicks/GyroAcc APIs, GNSS HAL, calibration overrides, DLT logs, or upload source for unit tests…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sb" onclick="send()" title="Send (Enter)">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="input-hints">
+        <span class="hint-chip" onclick="askQ('Draw an ASCII diagram of this module\'s flow')">📐 Diagram</span>
+        <span class="hint-chip" onclick="askQ('Give a code example for this')">💻 Code</span>
+        <span class="hint-chip" onclick="askQ('Compare VCU 1.1 vs VCU 1.5 for this topic')">📊 Compare</span>
+        <span class="hint-chip" onclick="askQ('List related Jira tickets and Gerrit IDs')">🔗 Tickets</span>
+        <span class="hint-chip" onclick="askQ('Who owns this and what is the current status?')">👤 Owner</span>
+        <span class="hint-chip" onclick="askLogAnalysis()">🔍 Analyze errors</span>
+        <span class="hint-chip" onclick="askUnitTests()">🧪 Generate tests</span>
+      </div>
+      <div class="attach-row">
+        <button class="attach-btn" onclick="openPumlModal()">🌱 PlantUML → PNG</button>
+        <div class="attach-sep"></div>
+        <button class="attach-btn" onclick="document.getElementById('imgFileIn').click()">🖼 Image</button>
+        <button class="attach-btn" onclick="document.getElementById('docFileIn').click()">📄 Log / Doc / Source</button>
+        <input type="file" id="imgFileIn" accept="image/*" style="display:none" onchange="onImageSelected(event)"/>
+        <input type="file" id="docFileIn" accept=".log,.txt,.docx,.pdf,.ppt,.pptx,.csv,.c,.cpp,.h,.hpp,.py,.java" style="display:none" onchange="onDocSelected(event)"/>
+      </div>
+      <div id="imgPreviewWrap" style="display:none" class="img-preview-wrap">
+        <img id="imgPreviewThumb" src="" alt=""/>
+        <span class="img-preview-label" id="imgPreviewLabel">image.png</span>
+        <button class="img-preview-rm" onclick="clearImage()">✕</button>
+      </div>
+      <div id="filePreviewWrap" style="display:none" class="file-preview-wrap">
+        <span class="file-preview-icon" id="filePreviewIcon">📄</span>
+        <span class="file-preview-label" id="filePreviewLabel">file.txt</span>
+        <button class="file-preview-rm" onclick="clearFile()">✕</button>
+      </div>
+      <div class="token-info" id="tokenInfo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PlantUML modal -->
+<div class="modal-overlay" id="pumlModal" style="display:none" onclick="if(event.target===this)closePumlModal()">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>🌱 PlantUML → PNG</span>
+      <button class="modal-close" onclick="closePumlModal()">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--txt3)">Paste <code style="font-size:11px">@startuml … @enduml</code> — rendered via plantuml.com</div>
+    <textarea class="puml-textarea" id="pumlCode" placeholder="@startuml&#10;Alice -> Bob: Hello&#10;Bob --> Alice: Hi!&#10;@enduml"></textarea>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closePumlModal()">Cancel</button>
+      <button class="btn-primary" id="pumlGenBtn" onclick="generatePumlPng()">Generate PNG</button>
+    </div>
+  </div>
+</div>
+
+<!-- mammoth.js for .docx text extraction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<!-- SWCDD knowledge database (external file) -->
+<script src="swcdd_db.js"></script>
+
+<script>
+const BMF_URL = '/proxy/chat';
+let MODEL = 'gpt-4o-2024-11-20';
+let MAX_TOKENS = 4000;
+let scope = 'both';
+let currentAgentMode = 'agent';
+let busy = false;
+
+// ── SWCDD DOCUMENT LOADER ────────────────────────────────
+const swcddDocs = { vip: null, cm: null, extra: null };
+// SWCDD_BUILTIN is loaded from external swcdd_db.js
+
+function toggleBuiltinSwcdd(slot) {
+  if (swcddDocs[slot]) { clearSwcdd(slot); return; }
+  const text = SWCDD_BUILTIN[slot];
+  if (!text) return;
+  const tokens = estTokens(text);
+  const names = { vip: 'SWCDD VIP RTC/GyroAcc/WhlTicks v4.0', cm: 'SWCDD Common Mainline v1.0' };
+  swcddDocs[slot] = { name: names[slot], text, tokens };
+  const capSlot = slot.charAt(0).toUpperCase() + slot.slice(1);
+  const slotEl = document.getElementById('swcddSlot' + capSlot);
+  slotEl.classList.add('loaded');
+  slotEl.querySelector('.swcdd-status').textContent = `\u2713 Active \u00b7 ~${tokens.toLocaleString()} tokens`;
+  updateSwcddTokenCount();
+  updateTokenInfo();
+  // Show the SWCDD content directly in chat
+  showArea();
+  addMsg('bot', renderMd(text), [names[slot]]);
+  scrollBottom();
+}
+
+async function extractDocxText(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt' || ext === 'log' || ext === 'csv') return await file.text();
+  if (ext === 'docx') {
+    const arrayBuffer = await file.arrayBuffer();
+    if (typeof mammoth !== 'undefined') { const r = await mammoth.extractRawText({ arrayBuffer }); return r.value; }
+    const text = new TextDecoder().decode(arrayBuffer);
+    return text.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ');
+  }
+  return await file.text();
+}
+
+async function onSwcddSelected(e, slot) {
+  const file = e.target.files[0]; if (!file) return;
+  const slotEl = document.getElementById('swcddSlot' + slot.charAt(0).toUpperCase() + slot.slice(1));
+  const statusEl = slotEl.querySelector('.swcdd-status');
+  statusEl.textContent = 'Loading\u2026';
+  try {
+    const text = (await extractDocxText(file)).slice(0, 60000);
+    const tokens = estTokens(text);
+    swcddDocs[slot] = { name: file.name, text, tokens };
+    slotEl.querySelector('.swcdd-name').textContent = file.name.length > 30 ? file.name.slice(0,27)+'\u2026' : file.name;
+    statusEl.textContent = `\u2713 Loaded \u00b7 ~${tokens.toLocaleString()} tokens`;
+    slotEl.classList.add('loaded');
+    updateSwcddTokenCount(); updateTokenInfo();
+  } catch (err) { statusEl.textContent = '\u26a0 ' + err.message.slice(0,40); }
+  e.target.value = '';
+}
+
+function clearSwcdd(slot) {
+  swcddDocs[slot] = null;
+  const capSlot = slot.charAt(0).toUpperCase() + slot.slice(1);
+  const slotEl = document.getElementById('swcddSlot' + capSlot);
+  slotEl.classList.remove('loaded');
+  const labels = { vip: 'VIP RTC/GyroAcc/WhlTicks v4.0', cm: 'Common Mainline v1.0 (u-blox/NavSensors)', extra: 'Upload your own SWCDD' };
+  slotEl.querySelector('.swcdd-name').textContent = labels[slot];
+  slotEl.querySelector('.swcdd-status').textContent = slot === 'extra' ? 'Click to load .docx / .txt / .pdf' : 'Click to activate';
+  updateSwcddTokenCount(); updateTokenInfo();
+}
+
+function updateSwcddTokenCount() {
+  const total = Object.values(swcddDocs).filter(Boolean).reduce((a, d) => a + d.tokens, 0);
+  const el = document.getElementById('swcddTokenCount');
+  if (total > 0) {
+    const count = Object.values(swcddDocs).filter(Boolean).length;
+    el.textContent = `${count} doc(s) active \u00b7 ~${total.toLocaleString()} tokens in context`;
+  } else { el.textContent = ''; }
+}
+
+function buildSwcddContext() {
+  const parts = [];
+  Object.entries(swcddDocs).forEach(([slot, doc]) => {
+    if (!doc) return;
+    parts.push(`\n## SWCDD DOCUMENT: ${doc.name}\n${doc.text}`);
+  });
+  return parts.join('\n');
+}
+
+// ── HISTORY ──────────────────────────────────────────────
+// Each session: { id, title, ts, conv:[] }
+let sessions = JSON.parse(localStorage.getItem('gmvcu_sessions') || '[]');
+let activeSessionId = null;
+let conv = [];
+
+function saveSessions() {
+  localStorage.setItem('gmvcu_sessions', JSON.stringify(sessions.slice(0, 50)));
+}
+function renderHistList() {
+  const el = document.getElementById('histList');
+  if (!sessions.length) { el.innerHTML = '<div class="hist-empty">No chats yet</div>'; return; }
+  el.innerHTML = sessions.map(s => `
+    <div class="hist-item${s.id===activeSessionId?' active':''}" onclick="loadSession('${s.id}')">
+      <span style="font-size:13px">💬</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.title)}">${escHtml(s.title.slice(0,26))}</span>
+      <button class="hist-del" onclick="event.stopPropagation();deleteSession('${s.id}')" title="Delete">✕</button>
+    </div>`).join('');
+}
+function loadSession(id) {
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  activeSessionId = id;
+  conv = [...s.conv];
+  // Re-render messages
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML = '';
+  document.getElementById('emptyState').style.display = 'none';
+  msgs.style.display = 'flex';
+  s.rendered.forEach(r => {
+    const el = document.createElement('div');
+    el.className = `msg ${r.role}`;
+    el.innerHTML = r.html;
+    msgs.appendChild(el);
+  });
+  scrollBottom();
+  renderHistList();
+  updateTokenInfo();
+}
+function deleteSession(id) {
+  sessions = sessions.filter(s => s.id !== id);
+  saveSessions();
+  if (activeSessionId === id) {
+    activeSessionId = null; conv = [];
+    document.getElementById('msgs').innerHTML = '';
+    document.getElementById('msgs').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('tokenInfo').textContent = '';
+  }
+  renderHistList();
+}
+function clearAllHistory() {
+  if (!confirm('Clear all chat history?')) return;
+  sessions = []; saveSessions();
+  activeSessionId = null; conv = [];
+  document.getElementById('msgs').innerHTML = '';
+  document.getElementById('msgs').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('tokenInfo').textContent = '';
+  renderHistList();
+}
+function startNewSession(firstMsg) {
+  const id = 'sess_' + Date.now();
+  const title = firstMsg.slice(0, 40) || 'New chat';
+  const s = { id, title, ts: Date.now(), conv: [], rendered: [] };
+  sessions.unshift(s);
+  activeSessionId = id;
+  saveSessions();
+  renderHistList();
+  return s;
+}
+function updateActiveSession() {
+  const s = sessions.find(x => x.id === activeSessionId);
+  if (!s) return;
+  s.conv = [...conv];
+  // capture rendered HTML
+  const msgs = document.getElementById('msgs');
+  s.rendered = [...msgs.children].map(el => ({
+    role: el.classList.contains('user') ? 'user' : 'bot',
+    html: el.innerHTML
+  }));
+  saveSessions();
+}
+
+// ── CONNECTION STATUS ─────────────────────────────────────
+function setStatus(state) {
+  const badge = document.getElementById('statusBadge');
+  const txt = document.getElementById('statusText');
+  badge.className = 'badge';
+  if (state === 'online')        { badge.classList.add('badge-online');   txt.textContent = 'Online'; }
+  else if (state === 'offline')  { badge.classList.add('badge-offline');  txt.textContent = 'Offline'; }
+  else                           { badge.classList.add('badge-checking'); txt.textContent = 'Connecting…'; }
+}
+async function checkConnection() {
+  setStatus('online');
+  setProxyDot('ok', 'Proxy online · gpt-4o');
+}
+function setProxyDot(state,msg){
+  const d=document.getElementById('proxyDot');
+  const t=document.getElementById('proxyStatusTxt');
+  if(d){d.className='proxy-dot '+state;}
+  if(t){t.textContent=msg;}
+}
+checkConnection();
+setInterval(checkConnection, 30000);  // re-check every 30s
+
+// ── UTILITIES ────────────────────────────────────────────
+function estTokens(str) {
+  if (!str) return 0;
+  const codeRatio = (str.match(/[{}[\]();=<>]/g)||[]).length / str.length;
+  return Math.ceil(str.length / (codeRatio > 0.05 ? 3.2 : 4.0));
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toggleAgentMode(mode) {
+  currentAgentMode = mode;
+  document.getElementById('agtStandard').classList.toggle('active', mode==='standard');
+  document.getElementById('agtReasoning').classList.toggle('active', mode==='agent');
+}
+function onModelChange() {
+  const v = document.getElementById('modelSel').value;
+  MODEL = v;
+  MAX_TOKENS = v.includes('o3')||v.includes('gpt-5') ? 8000 : v.includes('gpt-4o') ? 6000 : 4000;
+}
+function setScope(s) {
+  scope = s;
+  document.querySelectorAll('.scope-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-s="${s}"]`).classList.add('active');
+}
+function onKeyInput() {
+  const k = document.getElementById('bmfKey').value.trim();
+  const el = document.getElementById('keySt');
+  if (!k) { el.textContent='Paste your key from the BMF portal'; el.className='key-st'; }
+  else if (k.length<20) { el.textContent='Key looks short — double-check'; el.className='key-st err'; }
+  else { el.textContent='✓ Key set — ready to chat'; el.className='key-st ok'; }
+}
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function handleKey(e) { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function askQ(q) { const qi=document.getElementById('qi'); qi.value=q; autoResize(qi); send(); }
+function newChat() {
+  conv = []; activeSessionId = null;
+  document.getElementById('msgs').innerHTML='';
+  document.getElementById('msgs').style.display='none';
+  document.getElementById('emptyState').style.display='flex';
+  document.getElementById('tokenInfo').textContent='';
+  renderHistList();
+}
+function scrollBottom() { const m=document.getElementById('msgs'); m.scrollTop=m.scrollHeight; }
+function copyCmd(el) {
+  const text = el.querySelector('span').textContent;
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const btn = el.querySelector('button');
+  btn.textContent='✓'; setTimeout(()=>btn.textContent='⎘',1500);
+}
+function askUnitTests() {
+  const qi=document.getElementById('qi');
+  if(pendingFileText&&pendingFileName){
+    const ext=pendingFileName.split('.').pop().toLowerCase();
+    const lang=ext==='py'?'Python':ext==='java'?'Java':'C/C++';
+    qi.value=`Generate comprehensive ${lang} unit tests for this source file with 100% line and branch coverage.\nUse ${lang==='Python'?'pytest with unittest.mock':'GoogleTest (gtest/gmock)'} framework. Cover normal paths, boundary conditions, error paths, and mock all HAL/I2C/OS dependencies. Output a complete compilable test file.`;
+  } else {
+    qi.value='Generate GoogleTest unit tests with 100% line and branch coverage for the following C++ code. Mock all HAL and I2C dependencies with gmock.\n\n[paste source code here]';
+  }
+  autoResize(qi); qi.focus();
+}
+function askLogAnalysis() {
+  if (pendingFileText) {
+    document.getElementById('qi').value = 'Analyze this log file. List all ERROR and WARNING lines, group by type, and explain what each error means in GMVCU context.';
+    autoResize(document.getElementById('qi'));
+  } else {
+    document.getElementById('qi').value = 'Analyze the following log and find all ERROR, WARN, and FATAL lines. Group by severity and explain root causes in GMVCU context:\n\n[paste log here]';
+    autoResize(document.getElementById('qi'));
+    document.getElementById('qi').focus();
+  }
+}
+
+// ── PLANTUML ──────────────────────────────────────────────
+function openPumlModal() { document.getElementById('pumlModal').style.display='flex'; setTimeout(()=>document.getElementById('pumlCode').focus(),50); }
+function closePumlModal() { document.getElementById('pumlModal').style.display='none'; }
+function encode64(data) {
+  const c='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+  let r='';
+  for(let i=0;i<data.length;i+=3){const b0=data[i],b1=data[i+1]??0,b2=data[i+2]??0;r+=c[b0>>2];r+=c[((b0&3)<<4)|(b1>>4)];r+=c[((b1&0xf)<<2)|(b2>>6)];r+=c[b2&0x3f];}
+  return r;
+}
+function encodePuml(text) {
+  const data = new TextEncoder().encode(text);
+  const deflated = pako.deflateRaw(data,{level:9});
+  return encode64(deflated);
+}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);})}
+function blobToDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob);})}
+async function generatePumlPng() {
+  const code = document.getElementById('pumlCode').value.trim();
+  if (!code) return;
+  const btn = document.getElementById('pumlGenBtn');
+  btn.disabled=true; btn.textContent='Generating…';
+  try {
+    if (typeof pako==='undefined') await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js');
+    const encoded = encodePuml(code);
+    const url = `https://www.plantuml.com/plantuml/png/${encoded}`;
+    let imgSrc = url;
+    try { const resp=await fetch(url); if(resp.ok){const blob=await resp.blob();imgSrc=await blobToDataURL(blob);} } catch(_){}
+    closePumlModal();
+    showArea();
+    const ts = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const el = document.createElement('div');
+    el.className='msg bot';
+    el.innerHTML=`<div class="bubble"><strong>PlantUML diagram</strong><br>
+      <img class="png-out" src="${imgSrc}" alt="PlantUML diagram" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <div style="display:none;color:var(--red);font-size:12px;margin-top:6px">⚠️ Could not render — check access to plantuml.com</div>
+      <a class="puml-dl" href="${url}" target="_blank">⬇ Open / download PNG</a>
+    </div><div class="msg-meta">GMVCU SENS BOT · ${ts}</div>`;
+    document.getElementById('msgs').appendChild(el);
+    scrollBottom();
+    updateActiveSession();
+  } catch(e){ alert('PlantUML error: '+e.message); }
+  btn.disabled=false; btn.textContent='Generate PNG';
+}
+
+// ── IMAGE & FILE UPLOAD ───────────────────────────────────
+let pendingImageB64=null, pendingImageName='';
+let pendingFileText=null, pendingFileName='';
+
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  return {log:'📋',txt:'📋',docx:'📝',doc:'📝',pdf:'📕',ppt:'📊',pptx:'📊',csv:'📊',c:'⚙️',cpp:'⚙️',h:'⚙️',hpp:'⚙️',py:'🐍',java:'☕'}[ext]||'📄';
+}
+
+function onImageSelected(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    pendingImageB64=ev.target.result; pendingImageName=file.name;
+    document.getElementById('imgPreviewThumb').src=pendingImageB64;
+    document.getElementById('imgPreviewLabel').textContent=file.name;
+    document.getElementById('imgPreviewWrap').style.display='flex';
+    const qi=document.getElementById('qi');
+    if(!qi.value.trim()){qi.value='Extract and transcribe all text from this image.';autoResize(qi);}
+    qi.focus();
+  };
+  reader.readAsDataURL(file); e.target.value='';
+}
+function clearImage() {
+  pendingImageB64=null; pendingImageName='';
+  document.getElementById('imgPreviewWrap').style.display='none';
+  document.getElementById('imgPreviewThumb').src='';
+}
+
+const SRC_EXTS=['c','cpp','h','hpp','py','java'];
+const LOG_EXTS=['log','txt','csv'];
+const BIN_EXTS=['docx','doc','pdf','ppt','pptx'];
+
+function isSourceFile(ext){ return SRC_EXTS.includes(ext); }
+
+function onDocSelected(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+
+  reader.onload=ev=>{
+    let content=ev.target.result;
+
+    if(BIN_EXTS.includes(ext)){
+      // Best-effort text extraction from binary XML-based formats
+      if(ext==='docx'||ext==='pptx'||ext==='ppt'){
+        content=content.replace(/<[^>]+>/g,' ').replace(/\s{2,}/g,' ');
+      }
+      content=content.slice(0,14000);
+    }
+
+    pendingFileText=content;
+    pendingFileName=file.name;
+    document.getElementById('filePreviewIcon').textContent=fileIcon(file.name);
+
+    const sizeStr=file.size<1024?file.size+'B':Math.round(file.size/1024)+'KB';
+    const tag=isSourceFile(ext)?'source · unit tests ready':BIN_EXTS.includes(ext)?'content extracted':'text';
+    document.getElementById('filePreviewLabel').textContent=`${file.name} (${sizeStr}, ${tag})`;
+    document.getElementById('filePreviewWrap').style.display='flex';
+
+    // Auto-set best-fit prompt
+    const qi=document.getElementById('qi');
+    if(!qi.value.trim()){
+      if(isSourceFile(ext)){
+        const lang=ext==='py'?'Python':ext==='java'?'Java':'C/C++';
+        qi.value=`Generate comprehensive ${lang} unit tests for this source file with 100% line and branch coverage.
+`+
+          `Use ${lang==='Python'?'pytest with unittest.mock':'GoogleTest (gtest/gmock)'} framework.
+`+
+          `For every function/method:
+`+
+          `• Normal path (valid inputs)
+`+
+          `• Boundary conditions (min/max values, empty, null/nullptr)
+`+
+          `• Error paths (I2C failures, invalid states, out-of-range)
+`+
+          `• Mock all external dependencies (HAL, I2C, OS timers)
+`+
+          `Output complete, compilable test file with all #includes and CMakeLists snippet.`;
+      } else if(ext==='log'){
+        qi.value='Analyze this log file. Find all ERROR, WARN, and FATAL lines. Group by severity, identify root causes, and explain in GMVCU embedded context.';
+      } else {
+        qi.value='Analyze this file and summarize the key information.';
+      }
+      autoResize(qi);
+    }
+    qi.focus();
+  };
+
+  if(BIN_EXTS.includes(ext)) reader.readAsText(file,'utf-8');
+  else reader.readAsText(file);
+  e.target.value='';
+}
+function clearFile() {
+  pendingFileText=null; pendingFileName='';
+  document.getElementById('filePreviewWrap').style.display='none';
+}
+
+// ── TYPING / AGENT STEPS ─────────────────────────────────
+function addTypingWithSteps(steps) {
+  const el=document.createElement('div');
+  el.className='msg bot'; el.id='typ';
+  let sh='';
+  if(currentAgentMode==='agent') sh=`<div class="agent-live-status" id="liveAgentStatus">⚙️ Agent Thinking Protocol Active...</div>`;
+  el.innerHTML=`<div class="bubble">${sh}<div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  document.getElementById('msgs').appendChild(el);
+  scrollBottom();
+  if(currentAgentMode==='agent'&&steps){
+    let i=0;
+    const iv=setInterval(()=>{
+      const se=document.getElementById('liveAgentStatus');
+      if(se&&i<steps.length){se.innerHTML=`⚡ [Step ${i+1}/${steps.length}]: ${steps[i]}`;i++;}
+      else clearInterval(iv);
+    },600);
+    el.dataset.intervalId=iv;
+  }
+}
+function rmTyping(){const t=document.getElementById('typ');if(t){if(t.dataset.intervalId)clearInterval(parseInt(t.dataset.intervalId));t.remove();}}
+function generateAgentThoughtSteps(q){
+  const s=["Analyzing query semantics & parameters"];
+  if(/diagram|flow|draw/i.test(q)) s.push("Initializing ASCII render pipeline");
+  if(/vcu 1.1|vcu 1.5|compare/i.test(q)) s.push("Cross-referencing hardware registers & architecture specs");
+  if(/code|syntax|example/i.test(q)) s.push("Constructing compliant proxy-buffer patterns & APIs");
+  if(/log|error|warn|fatal|dlt/i.test(q)) s.push("Scanning log patterns & error signatures");
+  if(/docx|pdf|ppt|file|document/i.test(q)) s.push("Extracting & indexing document content");
+  s.push("Synthesizing final structural documentation response");
+  return s;
+}
+
+// ── MARKDOWN RENDERER ─────────────────────────────────────
+function renderMd(raw) {
+  if(!raw) return '';
+  let s=escHtml(raw);
+  s=s.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,lang,code)=>{
+    const id='cb_'+Math.random().toString(36).slice(2);
+    return `<div class="pre-wrap"><button class="copy-btn" onclick="copyCode('${id}')">Copy</button><pre id="${id}"><code>${code.trim()}</code></pre></div>`;
+  });
+  s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  s=s.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  s=s.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  s=s.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  s=s.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  s=s.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');
+  s=s.replace(/^---$/gm,'<hr>');
+  s=s.replace(/((?:^\|.+\|\n)+)/gm,block=>{
+    const rows=block.trim().split('\n').filter(r=>!/^\|[\s\-|]+\|$/.test(r));
+    const makeRow=(r,h)=>{const cells=r.split('|').filter((_,i,a)=>i>0&&i<a.length-1);const t=h?'th':'td';return '<tr>'+cells.map(c=>`<${t}>${c.trim()}</${t}>`).join('')+'</tr>';};
+    return '<table>'+rows.map((r,i)=>makeRow(r,i===0)).join('')+'</table>';
+  });
+  s=s.replace(/((?:^[-*] .+\n?)+)/gm,b=>{const items=b.trim().split('\n').map(l=>`<li>${l.replace(/^[-*] /,'')}</li>`).join('');return `<ul>${items}</ul>`;});
+  s=s.replace(/((?:^\d+\. .+\n?)+)/gm,b=>{const items=b.trim().split('\n').map(l=>`<li>${l.replace(/^\d+\. /,'')}</li>`).join('');return `<ol>${items}</ol>`;});
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Highlight error/warn in log output
+  s=s.replace(/\b(ERROR|FATAL|CRITICAL)\b/g,'<span class="log-error">$1</span>');
+  s=s.replace(/\b(WARN(?:ING)?)\b/g,'<span class="log-warn">$1</span>');
+  s=s.replace(/\n/g,'<br>');
+  s=s.replace(/(<\/(?:h[123]|ul|ol|pre|table|blockquote|hr|div)>)<br>/g,'$1');
+  s=s.replace(/<br>(<(?:h[123]|ul|ol|pre|table|blockquote|div))/g,'$1');
+  return s;
+}
+function copyCode(id){const el=document.getElementById(id);if(!el)return;navigator.clipboard.writeText(el.innerText).catch(()=>{});const btn=el.previousElementSibling;if(btn){btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',1500);}}
+function inferSrc(txt){
+  const s=new Set();
+  if(/DLT|W1R|SCC_DLT|injection/i.test(txt)) s.add('Test strategy v1.6');
+  if(/RTC|rtcProxy|VLF|IsRTCRunning|I2C|RA8804/i.test(txt)) s.add('RTC SWCDD v3.0');
+  if(/WheelTick|pulses|wraparound/i.test(txt)) s.add('WheelTicks SWCDD');
+  if(/Gerrit|1206533|VCU_COMMON/i.test(txt)) s.add('Gerrit 1206533');
+  if(/GNSS|NEO-M[89]|MON-LLC|CFG-OTP|NAV-PVT|CUbxThread|CParser|CSvStatus/i.test(txt)) s.add('GNSS HAL SWCDD');
+  if(/CUbxThread|CUbxGpsState|CGnssDriver|parseMonLlc|parseCfgOtp|parseGyroAcc|VCU_COMMON_MAINLINE|CFG_SIGNAL|CFG_RATE/i.test(txt)) s.add('u-blox codebase (gps/hal)');
+  if(/SensorDataReader|GnssSourceVIP|NavSensMetaDataGenerator|PASCDData|GnssLocationData|VipTime|CalibrationValues|InclHeightEstimator/i.test(txt)) s.add('NavSensors codebase');
+  if(/plugins.calibration|GyroOffset|AccZOffset|VelocityScaleFactor|InclHeight|SensorChecker/i.test(txt)) s.add('Delta-H calibration algorithms');
+  if(/SMI230|SMI330|STMASM|IMU|3DOF|6DOF/i.test(txt)) s.add('Sensors HAL SWCDD');
+  if(/RTC1-|2951064/i.test(txt)) s.add('Jira RTC1-2951064');
+  if(/SMI430|MY29|ECP/i.test(txt)) s.add('ECP_INT082_VCU1.5');
+  if(/INFGBP|49014/i.test(txt)) s.add('Jira INFGBP-49014');
+  if(/ERROR|WARN|FATAL|log/i.test(txt)) s.add('Log analysis');
+  if(s.size===0) s.add('GMVCU knowledge base');
+  return [...s];
+}
+function updateTokenInfo(){
+  const sys=buildSystem();
+  const ct=conv.reduce((a,m)=>a+estTokens(typeof m.content==='string'?m.content:'[file]'),0);
+  document.getElementById('tokenInfo').textContent=`~${(estTokens(sys)+ct).toLocaleString()} tokens in context`;
+}
+
+// ── ADD MESSAGE ───────────────────────────────────────────
+function showArea(){document.getElementById('emptyState').style.display='none';document.getElementById('msgs').style.display='flex';}
+function addMsg(role,htmlContent,sources,agentSteps){
+  const el=document.createElement('div');
+  el.className=`msg ${role}`;
+  const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  let alog='';
+  if(role==='bot'&&currentAgentMode==='agent'&&agentSteps&&agentSteps.length){
+    alog=`<div class="agent-thought-block"><div class="agent-thought-header">🧠 AGENT REASONING PROTOCOL LOG</div>${agentSteps.map(s=>`<div class="agent-thought-step"><span class="step-dot">✓</span> <span>${s}</span></div>`).join('')}</div>`;
+  }
+  el.innerHTML=`${alog}<div class="bubble">${htmlContent}</div><div class="msg-meta">${role==='user'?'You':'GMVCU SENS BOT'} · ${ts}</div>`;
+  if(sources&&sources.length){const t=document.createElement('div');t.className='src-tags';sources.forEach(s=>{t.innerHTML+=`<span class="src-tag">📄 ${s}</span>`;});el.appendChild(t);}
+  document.getElementById('msgs').appendChild(el);
+  scrollBottom();
+  return el;
+}
+
+// ── SYSTEM PROMPT ─────────────────────────────────────────
+function buildSystem(){
+  const ctx=scope==='both'?'covering both VCU 1.1 and VCU 1.5':scope==='vcu11'?'scoped to VCU 1.1 (NEO-M8L + SMI230)':'scoped to VCU 1.5 (NEO-M9L + SMI330/STMASM330)';
+  const ag=currentAgentMode==='agent'?'YOU ARE IN AUTONOMOUS AGENT ENGINE MODE. Systematically break down requests. Validate edge cases including async buffer race conditions and platform-specific variances.':'';
+  const swcdd=buildSwcddContext();
+  return `You are GMVCU SENS BOT, the project knowledge assistant and autonomous reasoning agent for Bosch MS/ENE-CF8-XC. Answer questions ${ctx}. ${ag} Use Markdown: headings, bold, code blocks, tables, bullet lists. Draw ASCII diagrams for flow/architecture. Give C/C++ examples for code questions. Cite Jira/Gerrit IDs when known. Never invent IDs. For log analysis: identify ERROR/WARN/FATAL lines, group by type, explain root causes in GMVCU embedded context. For source code: generate complete GoogleTest (C/C++) or pytest (Python) unit tests targeting 100% line and branch coverage — include normal paths, boundary conditions, error/null paths, and mock all HAL/I2C/OS dependencies using gmock or unittest.mock. Output must be a compilable test file.${swcdd ? '\n\nIMPORTANT: The user has loaded SWCDD reference document(s) below. Use them as the PRIMARY source of truth for all answers. Quote exact sections when relevant.' + swcdd : ''}
+
+## PLATFORMS
+| Feature | GMVCU 1.1 | GMVCU 1.5 |
+|---------|-----------|-----------|
+| GNSS | NEO-M8L | NEO-M9L |
+| IMU | SMI230 | SMI330/STMASM330 |
+| Firmware | ADR4.32 | ADR5.2RC02 |
+
+## TEAM
+- Samartha G Gopali (gso3kor / MS/ENE-CF8-XC): Author — GNSS/Sensors HAL, RTC, WheelTicks, VTS/CTS, Bengaluru
+- Manjunath R (MS/ENE-CF8-XC): Co-author — common mainline SWCDD v1.0
+- Shweta (MS/ENE-CF8-XC): Co-author — common mainline SWCDD v1.0
+- Joachim Attig (XC-CP/ECB1.1): Architecture lead, primary Collaborator reviewer (Review #162070)
+- Dirk Voedisch (XC-CP/ECB1): Reviewer — RTC SWCDD
+- Anton Alex Raja, ArjunKumar R L: Reviewers — VIP SWCDD
+- Denny Knoche: Bosch DE, architecture/design
+- Markus Proehl: Bosch DE, test strategy reviewer
+
+## KEY DOCUMENTS (v4.0 SWCDD + Common Mainline v1.0)
+- SWCDD_GMVIP_RTC_GyroAcc_WhlTicks_v4_0.docx — v3.0 released 08/Jan/2026
+- SWCDD_GMVCU_ublox_navsensors_Common_mainline v1.0 — released 13/Apr/2026
+- Docupedia: GMVCU GNSS, Sensors and GMLocation HAL Debugging and Testing (v193, Jun 18 2026)
+- Gerrit 1206533: common mainline merge; Gerrit 1081833: GNSS V3/Sensors V2 NDK freeze
+
+## REPOSITORIES
+- u-blox repo: GNSS/Sensors/GMLocation HAL for RoW (M8/M9)
+- navsensors repo: GNSS/Sensors/GMLocation HAL for NA and CHN
+- location_sensors repo: u-blox FW update utility (QNX recovery mode)
+- gnss-firmware repo: FW artifacts for M8 (ADR4.32) and M9 (ADR5.2RC02)
+- common mainline branch: rb_gmvcu_basesw_sensors_common_main
+- VCU 1.1 Android repo init: repo init -u ssh://cm_gerrit/projects/gmvcu/manifests -b rb_main_es_1 -m bosch_vcu_aosp.xml -g android,qnx,autosar,boschtools
+- VCU 1.5 repo init: repo init -u ssh://cm_gerrit/projects/gmvcu/manifests -b rb_gmvcu_1_5_fc -m bosch_vcu_aosp.xml -g android,qnx,autosar,boschtools
+
+## PLATFORM MATRIX
+| Feature | VCU 1.1 (RoW) | VCU 1.5 (RoW) | NA (both) | CHN (both) |
+|---------|--------------|--------------|-----------|------------|
+| GNSS chip | NEO-M8L (UART) | NEO-M9L (UART) | TCP-CAN / TCP-ETH | TCP-CAN / TCP-ETH |
+| IMU | SMI230 (SPI) | SMI330 / STMASM330 (SPI) | Ethernet 3DOF/6DOF | SMI230/SMI330 via VIP SPI |
+| GNSS_DR_SRC | 1 | 1 | 0 | 0 |
+| FW | ADR4.32 | ADR5.2RC02 | - | - |
+
+## CALIBRATION IDs & OVERRIDE FILES
+| Variant | GNSS_DR_SRC | TCP_LOCATION_DATA_SOURCE | SENS_IMU_SRC | Override file |
+|---------|-------------|--------------------------|--------------|---------------|
+| u-blox RoW | 1 | - | 4 | ublox.override |
+| ETH_3DOF NA/CHN | 0 | - | 6 | ETH_3DOF.override |
+| ETH_6DOF NA/CHN | 0 | - | 7 | ETH_6DOF.override |
+| TCP-CAN-CHN | 0 | 1 | 3 | TCP-CAN-CHN.override |
+| TCP-CAN-NA | 0 | 1 | 5 | TCP-CAN-NA.override |
+| TCP-ETH-CHN | 0 | 2 | 3 | TCP-ETH-CHN.override |
+| TCP-ETH-NA | 0 | 2 | 5 | TCP-ETH-NA.override |
+Override path: /data/vendor/calibrations/ (ADB push). SBAT + HWCPN mandatory before override.
+
+## VIP SOURCE FILES (platformIvi.zip)
+### ECUAL.RTC (RTC.c / RTC.h)
+APIs:
+- IsRTCRunning() → RTCStatus: checks VLF/VDET flags, returns RTC_OK/RTC_NOT_OK/RTC_NOT_AVAILABLE(255)
+- RTC_GetDateTime(RTC_Time*, RTC_Date*) → RTCStatus: reads from 16-byte async proxy buffer
+- RTC_SetDateTime(RTC_Time, RTC_Date) → RTCStatus: async I2C write (W8 sequence), resets SRT
+- RTC_GetRamData(sint8*) / RTC_SetRamData(sint8) → register 0x07
+- RTC_SetFixedTimerInterrupt(uint64 CycleIntervalInMilliSecs) → configures timer IRQ
+- RTC_GetFixedTimerInterrupt(uint64*, uint64*) → interval + elapsed
+- RTC_DisableFixedTimerInterrupt() → clears TF/TE/TIE flags
+- RTC_NotifyWakeupReason() → called from MainFunction on IRQ wake
+- RTC_MainFunction() → 10ms OS task: async refresh (W1R16), alignment, VLF clear, timer expiry
+- RTC_Init() → state/DLT/validity init
+- RTC_SetWakeupNotification(uint8) → from ISR
+Structs: RTC_Time{Seconds:0-59, Min:0-59, Hours:0-23}, RTC_Date{Day:1-31, Month:1-12, Year:2000-2099}
+I2C sequences: W1R16=async 16-reg read (every 1s), W8=set datetime, W2=RAM write/timer disable, W3=timer config, W4=disable timer
+
+### ECUAL.WHLTICKS (WhlTicks.c / WhlTicks.h)
+APIs:
+- WhlTicks_InitNCR_NavSensor(WhlTicksStatusType*) → init state machine, DLT, disable NMEA (CFG-PRT), configure ESF-WT (CFG-ESFWT IDs 8/9)
+- WhlTicks_SetNCRNavSnsrInputData(WhlTicksDataType*) → sends UBX-ESF-MEAS every 100ms (24 bytes: rlWheelTick, rrWheelTick, timetag, reverse gear bit)
+Struct: WhlTicksDataType{flWheelTick, frWheelTick, rlWheelTick, rrWheelTick, wheelSingle, timetag(uint32 ms), IsvehGearStatusInReverse(boolean)}
+Counter: uint16 (0-65535), wraparound at 65535→0. Min ADR rate: 1 Hz. Tx rate: 10 Hz (100ms).
+
+### ECUAL.GYROACC (GyroAcc.c / GyroAcc.h)
+APIs:
+- GyroAcc_InitAccelerometer(GyroAccStatusType*) → SPI init, range/BW/PWR config
+- Acc_GetDataRecord(sint16 *ax, *ay, *az) → burst SPI read ACC_SMI230_X/Y/Z LSB/MSB registers (0x12-0x17)
+- GyroAcc_InitGyrometer(GyroAccStatusType*) → SPI init, range/filter/interrupt config
+- Gyro_GetDataRecord(sint16 *gx, *gy, *gz, *gTemp) → burst SPI read GYRO registers (0x02-0x08)
+- GyroAccSelfTest(GyroAccSelfTestInfo*) → Tx/Rx polling per datasheet timing
+- GyroAcc_GetAccelConfigData(*aminraw, *amaxraw, *aminphy, *amaxphy) → from static macros
+- GyroAcc_GetGyroConfigData(*gminraw, *gmaxraw, *gminphy, *gmaxphy) → from static macros
+Key macros: MAX_POS_RAW_VAL=32768, PHY_MUL=1000000, GYRO_ACC_DATA_BUFFER_LENGTH=8, READ bit=0x80
+Accel ranges: 0→2g, 1→4g, 2→8g, 3→16g. Gyro ranges: 000→2000, 001→1000, 010→500, 011→250, 100→125 deg/s
+SMI230 resolution: Accel 39.24 maxrange, 0.001197 m/s²/LSB. Gyro 4.363 rad/s maxrange, 0.0001331 rad/s/LSB
+
+## GNSS HAL (gnss archive — common/gnss/gmlocation directories)
+- Variant detection: MON-LLC (primary), CFG-OTP (fallback)
+- UBX messages: NAV-PVT, NAV-STATUS, NAV-ORB, MON-HW, MON-PT2 (self-test), MON-LLC, MON-VER
+- GNSS self-test (UBX-CFG-PT2 → UBX-MON-PT2): C/N₀ 42-55 dB-Hz, carrier phase deviation <5°, RTC freq 32758-32780 Hz
+- GPS SVID=20 (GNSS ID=0), GLONASS wildcard SVID=255 (GNSS ID=6, FCN=0)
+- TCP server port 42434 (userdebug only): adb forward tcp:42434 tcp:42434, connect u-center to tcp://127.0.0.1:42434
+- NMEA disable via UBX-CFG-PRT (I2C): echo -e -n hex_bytes > /dev/ttyHS1 (one-time after ADR4.32 FW update)
+- u-blox FW update: OTA preferred (recovery mode swu_bootctrl.out -s mode 2 && swu_bootctrl.out -s reason 8); manual via ubxfwupdate baud combos
+
+## RTC DRIVER (RA8804CE) — SWCDD v4.0
+- Architecture: async proxy-buffer (16 registers refreshed every 1s via W1R16)
+- IsRTCRunning(): VLF=voltage low flag, VDET=voltage detector flag; must return RTC_OK before any time ops
+- Proxy buffer: 16 bytes in GLOBAL_A_RAM, refreshed async by RTC_MainFunction (10ms task)
+- SRT (Second Rollover reference Time): reset on each SetDateTime; next read scheduled at SRT+1100ms (or +1500ms if proximity conflict)
+- Proximity avoidance: if GetDateTime <100ms (or <200ms post-SRT) from scheduled nRT, nRT shifts ±400ms
+- VLF race fix: atomic state management in MainFunction; proxy marked invalid until fresh read completes
+- Boot scenarios: 1a cold start, 1b warm, 2a cold+SetDateTime, 2b warm+rollover, 3a/3b boundary GetDateTime, 4a cold+mixed, 5b warm+multi-read, 6b proximity postpone, 7b pre-rollover
+- Timer: IRQ on TF flag, captured in 10ms task, notified via RTC_NotifyWakeupReason()
+- Validity proposal B: store flags in reserved RTC register bits (recommended over NVM)
+- Bug INFGBP-49014: wrong year after battery disconnect
+- Bug RTC1-2951064: unexpected alarm expiry in async I2C flow
+
+## WHEELTICKS — SWCDD v4.0
+- ESF-MEAS format: 24 bytes, IDs 8 (rlWheelTick) and 9 (rrWheelTick), timetag=32-bit ms counter
+- Counter wraparound: uint16 0→65535→0, u-blox handles rollover internally
+- Init sequence: CFG-PRT (disable NMEA on I2C), CFG-ESFWT (enable IDs 8/9)
+- DLT enable: SCC_DLT_SET_LOG_LEVEL_MOD Odo_Main DLT_LOG_DEBUG + SCC_DLT_STORE_CONFIG
+- Distance formula: (RR + RL ticks) / (2 × pulses_per_meter)
+- XTM tests: 2 tests; XTM_MODE_CMD 10 0 4 0 0 0 0001 0
+- DLT injection: SCC_DLT_CALL_SW_INJECTION <seq_id> <value>
+
+## GYRO/ACC DRIVER
+- SMI230 (VCU 1.1): SPI, SPI_GYRO_CS_B + SPI_ACC_CS_B
+- SMI330/STMASM330 (VCU 1.5): SPI same interface
+- I2C addresses (CHN/RoW): ACC 0x30/0x32, GYR 0x D0/0xD2 (depending on SDO1/SDO2 pin)
+- Self-test: GyroAccSelfTest() → PASS/FAIL status per datasheet
+- DLT enable: SCC_DLT_SET_LOG_LEVEL_MOD Gyro_Acc DLT_LOG_DEBUG + SCC_DLT_STORE_CONFIG
+- XTM tests: GYRO 2 tests → XTM_MODE_CMD 10 0 4 2 0 0 0001 0; ACC 2 tests → XTM_MODE_CMD 10 0 4 3 0 0 0001 0
+
+## LOGGING COMMANDS
+### DLT log enable:
+- RTC: SCC_DLT_SET_LOG_LEVEL_MOD RTCHHDL_ DLT_LOG_DEBUG + SCC_DLT_SET_LOG_LEVEL_MOD RTC_MAIN DLT_LOG_DEBUG + SCC_DLT_STORE_CONFIG
+- GyroAcc: SCC_DLT_SET_LOG_LEVEL_MOD Gyro_Acc DLT_LOG_DEBUG + SCC_DLT_STORE_CONFIG
+- WhlTicks: SCC_DLT_SET_LOG_LEVEL_MOD Odo_Main DLT_LOG_DEBUG + SCC_DLT_STORE_CONFIG
+- Android connected HAL: setprop persist.log.tag.Bosch_NavSensors V && logcat | grep Bosch_NavSensors
+- Android u-blox HAL: setprop persist.log.tag.u-blox V && logcat | grep u-blox
+- u-blox hex trace: setprop persist.log.tag.u-blox-hex V + setprop persist.vendor.bosch.hardware.gnss.sensors.log.counter 1
+- NavEvent libs: setprop persist.log.tag.libNavEvent V && logcat | grep libNavEvent
+- Log frequency: setprop persist.vendor.bosch.hardware.gnss.sensors.log.counter <value> (default 20)
+
+## VTS / CTS TESTING
+- VTS commands: vts -m VtsHalGnssTargetTest | VtsHalBoschGnssTargetTest | VtsHalBoschSensorsTargetTest | VtsAidlHalSensorsTargetTest | VtsHalBoschGmLocationTargetTest
+- NavTest: adb install GMNavTest.apk → ./vendor/bin/gmlocation-client-1-0
+- CTS prerequisites: Linux/Ubuntu VM, ADB over Ethernet, OpenJDK 9+
+- CTS example: cts-tf > run cts -m CtsSensorTestCases -t android.hardware.cts.SensorDirectReportTest#testSensorAdditionalInfo --skip-preconditions
+- STR (Suspend to RAM): via CANoe panel "network wakeup sleep", RBS from Artifactory
+- RBS Artifactory: https://rb-cmbinex-hi-p1.de.bosch.com/artifactory/webapp/#/artifacts/browse/tree/General/gmvcu-repos/bosch/rbs
+- Simulation ASC file: GNSS_Sensor_GmLocation.asc in replay block for CAN simulation
+
+## ADB / TARGET COMMANDS
+- ADB over Ethernet: setprop service.adb.tcp.port 5555 && stop adbd && start adbd → adb connect 192.168.222.108:5555
+- ADB over USB: echo peripheral > /sys/bus/platform/devices/a800000.ssusb/mode + setprop sys.usb.config adb
+- HWCPN read/write: /mnt/usr/bin/libpal_diagnostics_testapp → menu 16 (HWCPN EXTN 8 bytes)
+- HWCPN example: 0x02250005051a0000
+- Calibration override apply: adb push <variant>.override /data/vendor/calibrations/ → power cycle → recovery mode applies to VIP
+- Screenshot: adb shell screencap -p /data/screen.png && adb pull /data/screen.png
+- Android Screencast: https://github.com/xSAVIKx/AndroidScreencast (faster than physical display)
+
+## FLASHING
+- VCU 1.5 tools: QPM (USB driver 1.00.89.3, xPCAT), flashgui 8.8 (VIP)
+- Flashing order: SAIL (one-time) → UFG provision (one-time) → xPCAT
+- CDT flash failure: rename contents_prod.xml → contents.xml (mandatory)
+- Write-protect fix: disable write protection in QFIL settings before re-flashing
+- VIP build: Build.bat -b GlobalB; debug: Build.bat -dh Mid
+- Calibration via DPS: use libpal_diagnostics_testapp for SBAT/HWCPN before DPS flash
+
+## ETHERNET SWITCH FW UPDATE (TCP Ethernet — 88Q5054)
+- Manual: adb push 88Q5054_flash.bin /tmp/ → chmod 777 /tmp/88Q5054_flash.bin → /mnt/usr/bin/Esm_Test_App -f /tmp/88Q5054_flash.bin
+- Verify version: /mnt/usr/bin/Esm_Test_App -v → expect "Firmware Version: v2.09.1000 (2022-05-20)"
+- Verify CRC: /mnt/usr/bin/Esm_Test_App -c → expect "CRC Value: 5893539d"
+- OTA: swu_bootctrl.out -s mode 2 && swu_bootctrl.out -s reason 8 → reboot → hamctrl -stop → Module ID 60, path hw_firmware/GNSS/gm_GNSS.img
+
+## u-blox COMMANDS
+- Set baud 115200: echo -e -n '\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xD0\x08\x00\x00\x00\xC2\x01\x00\x07\x00\x03\x00\x00\x00\x00\x00\xC0\x7E' > /dev/ttyHS1
+- Save config: echo -e -n '\xB5\x62\x06\x09\x0D\x00\x00\x00\x00\x00\xFF\xFF\x00\x00\x00\x00\x00\x00\x17\x31\xBF' > /dev/ttyHS1
+- Erase+reset to 9600: echo -e -n '\xB5\x62\x06\x09\x0D\x00\xFF\xFF\x00\x00\x00\x00\x00\x00\xFF\xFF\x00\x00\x03\x1B\x9A' > /dev/ttyHS1
+- FW recovery (QNX): ./usr/bin/swu_bootctrl.out -s mode 2; SSH 192.168.211.100 root; run gnss_fw_update_test_app.out
+
+## CHINA TICKETS
+- 1788859: pitch range -140° to +80°
+- 1858765: WheelTick distance tracking
+- 1877500: pitch anomaly after long distance
+
+## TESTING FRAMEWORK
+- GoogleTest/GoogleMock (C++) for unit tests; pytest for Python
+- CTS/VTS/NavTest for HAL validation; XTM for VIP sensor drivers
+- Robot Framework/Jenkins/RQM for CI
+- SimplePerf CPU profiling: simpleperf record -e sched:sched_switch -p <PID> -g --duration 120 → FlameGraph SVG
+- NMEA checker: https://github.com/rkubik/nmea-checker + online: https://rl.se/gprmc
+- Trip file: push config.json to /data/vendor/nav/tripfilelogger/config.json; pull .ptf; python tripfileconverter.py
+
+## UNIT TEST PATTERNS (from existing utest files in platformIvi.zip)
+- Framework: GoogleTest with gmock; separate *_utest.cpp and *_Mock.h files per module
+- RTC tests: RTC_utest.cpp — covers IsRTCRunning, GetDateTime, SetDateTime, MainFunction states, VLF scenarios, proximity avoidance
+- WhlTicks tests: WhlTicks_utest.cpp — covers InitNCR, SetInputData, ESF-MEAS payload, wraparound
+- GyroAcc tests: GyroAcc_utest.cpp — covers InitAccel, InitGyro, GetDataRecord, SelfTest, range macros
+- SPI mock: Spi_Mock.cpp/h — mock SPI read/write for GyroAcc tests
+- Build: CMakeLists.txt per module under utest/ directory
+- For 100% coverage: test all RTCStatus returns, all uint16 boundary values (0, 1, 65534, 65535), null pointer handling, I2C error injection
+## U-BLOX HAL CODEBASE (gps/ directory — RoW variant)
+### Architecture
+- \`gps/hal/CUbxThread.cpp/h\` — Main message dispatch loop; handles all UBX message parsing and GM-specific extensions
+- \`gps/hal/CUbxGpsState.cpp/h\` — State machine: time/position aiding, MGA, AssistNow, self-test triggering
+- \`gps/hal/CGnssDriver.cpp/h\` — Top-level GNSS driver; owns CUbxThread and CUbxGpsState
+- \`gps/hal/CParser.cpp/h\` — UBX/NMEA/RTCM protocol framing and byte-stream parsing
+- \`gps/hal/CSvStatus.cpp/h\` — Satellite vehicle status tracking (SV info, constellations)
+- \`gps/hal/CReceiverConfHandler.cpp/h\` — Runtime config; dispatches to CReceiverConfHandlerUpToV8 (M8) or CReceiverConfHandlerFromV9 (M9)
+- \`gps/hal/CSensorsDriver.cpp/h\` — Sensors HAL (Accel/Gyro) integration into GNSS HAL
+- \`gps/hal/aidl/GmLocationService.cpp/h\` — GMLocation AIDL service impl
+- \`gps/parser/\` — Standalone parser library: CUBXParser, CNMEAParser, CRTCMParser, CDeepParser, CShallowParser
+- \`gps/logging/\` — TripFile logging framework (protobuf: gnss.proto, sensors.proto, gmlocation.proto)
+- \`ubxfwupdate/\` — u-blox FW update tool source (flash.c, receiver.c, ubxmsg.c)
+
+### Key Message IDs (from CUbxThread.h)
+- cfgClsId=0x06, monClsId=0x0A, navClsId=0x01
+- CFG-PRT: (0x06, 0x00) — port config (I2C/UART NMEA disable)
+- MON-LLC: (0x0A, 0x0D) — variant detection (primary discriminator M8 vs M9)
+- CFG-OTP: (0x06, 0x41) — OTP fuse programming (fallback discriminator)
+- MON-PT2: (0x0A, 0x2B) — GNSS self-test result
+- MON-SPT: (0x0A, 0x2F) — gyro/acc self-test trigger
+- CFG-GNSS: (0x06, 0x3E) — constellation enable/disable
+- CFG-CFG: (0x06, 0x09) — save/load/erase receiver config
+- NAV-ORB: (0x01, 0x34) — orbit data (AssistNow)
+- TCP server port: 42434 (userdebug only, -DTCP_SERVER_PORT=42434)
+
+### Self-Test (GM-specific in CUbxThread)
+- \`parseGyroAccSelfTestResponse()\` — parses SMI230/SMI330/STMASM330 self-test response from MON-SPT
+- \`parseSMI230SelfTestResponse()\` — SMI230-specific parsing
+- \`parsegnssStData()\` / \`stopGnssSelfTest()\` — GNSS self-test via MON-PT2
+- \`isGnssSelfTestRunning\`, \`isGyroSelfTestRunning\` — state flags
+- \`m_gnssSelfTestOpt\` (uint8), \`m_monPt2Cnt\` (max=20), \`maxMonPt2Cnt=20U\`
+- \`minRtcFreq=32758U\`, \`maxRtcFreq=32780U\` (from CUbxThread.h constexpr)
+- GPS_ID=0, GPS_SVID=20, GLONASS_ID=6, GLONASS_SVID=255, GLONASS_ACCSID=7
+- MIN_PHASE_LOCK_TIME=2000ms, PHASE_LOCK_SUCCESS_PERCENTAGE=100
+
+### Baud Rate Negotiation
+- M8: BAUDRATE_COMM=230400, BAUDRATE_DEF=9600, BAUDRATE_FTS=115200
+- M9: BAUDRATE_COMM=230400, BAUDRATE_DEF=9600, BAUDRATE_M9_DEF=38400, BAUDRATE_FTS=115200
+- maxBaudRate=230400 (constexpr in CUbxThread.h)
+- DELAY_MICROSECONDS=100000 after CFG-PRT before baud switch
+- Fallback sequence for FW update: 9600:9600:230400 → 38400:9600:230400 → 115200:9600:230400
+
+### Port Config Constants (from CUbxThread.h)
+- i2cPrt=0, uartPrt=1
+- inUbxNmeaRtcm2=7 (input protocol mask: UBX+NMEA+RTCM2)
+- outUbxNmea=3 (output: UBX+NMEA), outUbx=1 (output: UBX only)
+
+### VCU_COMMON_MAINLINE Macro (CUbxGpsState.h)
+- \`#if (VCU_COMMON_MAINLINE == VCU_1_1)\` → \`writeUbxCfgGNSS(uint8_t constFlag, bool m_isPollMsg)\`
+- \`#if (VCU_COMMON_MAINLINE == VCU_1_5)\` → \`writeUbxCfgGNSS(uint8_t constFlag)\` (no poll msg param)
+- Compile-time differentiation: VCU_1_1 vs VCU_1_5 for constellation config flow
+
+### Config Files (gps/conf/)
+- \`u-blox_M8.conf\`: RECEIVER_GENERATION=8, SERIAL_DEVICE=/dev/ttyHS1, BAUDRATE_COMM=230400, BAUDRATE_DEF=9600, MGA_STRATEGY=None, ASSIST_NOW_AUTONOMOUS=false, SENSOR_ENABLED_STARTUP=true, MGA_PERSISTENCE=false
+- \`u-blox_M9.conf\`: RECEIVER_GENERATION=9, adds BAUDRATE_M9_DEF=38400, otherwise same
+- \`u-blox_imu.conf\`: IMU calibration table — IMU_ID, IMU_MODEL, TIMESTAMP_RESOLUTION_MICROSECONDS, TIME_TAG_MAX_CTR
+  - IMU 26: BMI330, 9.765625 µs, 4294967295
+  - IMU 27: SMI330, 9.765625 µs, 4294967295
+  - IMU 18: LSM6DSR, 26.05 µs
+  - IMU 19/20: ICM42605/IIM42652, 16 µs, 65535 (16-bit counter)
+
+### M9-Specific CFG-VAL Keys (CReceiverConfHandlerTypes.h)
+- CFG_RATE_MEAS=0x30210001, CFG_RATE_NAV=0x30210002, CFG_RATE_TIMEREF=0x20210003
+- CFG_SIGNAL_GPS_ENA=0x1031001f, CFG_SIGNAL_GLO_ENA=0x10310025, CFG_SIGNAL_GAL_ENA=0x10310021
+- CFG_SIGNAL_BDS_ENA=0x10310022, CFG_SIGNAL_NAVIC_ENA=0x10310026
+- CFG_UART1_BAUDRATE=0x40520001
+- CFG_SFODO_IMU2VRP_LA_X/Y/Z=0x30070012/13/14 (IMU lever arm offsets)
+- CFG_INFMSG_NMEA_I2C=0x20920006 (NMEA I2C port info message config)
+
+### Unit Tests (gps/hal/utest/)
+- CUbxThread_Test.cpp, CParser_test.cpp, GmLocationService_Test.cpp, GnssTest.cpp
+- CSensorModule_Test.cpp, CIPCListener_Test.cpp, GnssVHalVehicleTest.cpp
+- Fakes: GnssCallback.h, Vehicle.h, ipcLibFake.cpp, properties.cpp
+- Mocks: ubxGpsStateMock.h, ipcMock.h, MockDelegatee.h
+- Run script: gnssUbx_unit-test_linux-x86_64_aborting.sh, coverage: code_coverage.sh
+
+## NAVSENSORS HAL CODEBASE (gnss archive — connected NA/CHN variants)
+### Architecture
+- \`common/GnssSourceVIP.cpp/h\` — Reads GNSS data from VIP via IPC (connected variant)
+- \`common/SensorDataReader.cpp/h\` — Reads IMU data from VIP via IPC/FMQ; pushes to sensor HAL
+- \`common/VipTime.cpp/h\` — VIP timestamp synchronization
+- \`common/CCalibration_utils.cpp/h\` — Calibration ID reading/parsing
+- \`common/GnssVHalProxy.cpp/h\` — VHAL bridge for GNSS data
+- \`common/GnssVHalVehicle.cpp/h\` — Vehicle property subscription for GNSS
+- \`common/MatrixFunctions.cpp/h\` — Matrix operations for sensor calibration
+- \`common/NavSensMetaDataGenerator.cpp/h\` — Sensor metadata generation
+- \`gnss/aidl/Gnss.cpp/h\` — GNSS AIDL HAL impl (connected variant)
+- \`sensors/aidl/Sensors.cpp/h\` — Sensors AIDL HAL impl
+- \`sensors/aidl/Sensor.cpp/h\` — Individual sensor handling
+- \`gmlocation/aidl/GmLocationService.cpp/h\` — GMLocation AIDL impl (connected)
+- \`plugins/calibration/\` — Delta-H calibration algorithms (GyroOffset, AccZOffset, AccXYOffset, VelocityScaleFactor, InclHeightEstimator, SpeedAccelEstimator, SensorChecker)
+- \`plugins/event/\` — NavEvent service (CNavEvent, CNavEventThread, CNavEventService, CNavQueue)
+- \`plugins/logging/\` — TripFile logger (same proto schema as u-blox repo)
+
+### Sensor Handles (SensorDataReader.h)
+- ACC_HANDLE=1, GYRO_HANDLE=2, ACCUNCALIBRATED_HANDLE=3, GYROUNCALIBRATED_HANDLE=4
+- GRAVITY_HANDLE=5, LINEAR_ACCELERATION_HANDLE=6, GYRO_TEMP_HANDLE=7
+- MAX_NUM_OF_SENSORS=7, TEN_SECONDS=10000ms
+
+### Data Structures (interface_types.h — navsensors)
+- \`GnssLocationData\`: statusFlags(32 flag bits), lat/lon/alt, speed, bearing, horizontal/vertical/speed/bearing accuracy, UTC(int64), rawDate, fixType
+- \`GnssLocationDataEth\`: same + bool valid (for Ethernet variant)
+- \`PASCDData\`: NMEA $PASCD sentence — gear, refTime, vector<tuple<timeOffset,speed>>, sensorType="C", slipDetect, transmissionState
+
+### Calibration Algorithms (plugins/calibration/)
+- \`GyroOffsetCalibrator\` — gyro bias estimation
+- \`AccZOffsetCalibrator\` — accelerometer Z-axis offset
+- \`AccXYOffset\` — XY plane accel offset
+- \`VelocityScaleFactorCalibrator\` — wheel speed scale factor
+- \`InclHeightEstimator\` — inclination and height estimation (delta-H algorithm)
+- \`SpeedAccelEstimator\` — speed from acceleration integration
+- \`SensorChecker\` — sensor health and validity monitoring
+- CalibrationValues stored at: /data/vendor/nav/CalibrationValues.txt
+
+### Unit Tests (utest/ — navsensors)
+- common/: CCalibration_utils_Test, CPowerModeListener_Test, GnssSourceVIP_Test, GnssVHalProxyTest, MatrixFunctionsTest, NavUtils_Test, SensorDataReaderTest, VipTime_Test
+- gnss/: Gnss_Test, AGnss_Test, GnssConfiguration_Test, GnssMeasurementInterface_Test, GnssAntennaInfo_Test, GnssBatching_Test, GnssDebug_Test etc.
+- gmlocation/: GmLocationService_Test
+- sensors/: SensorTest, SensorsTest, SensorsProtoTestUtils
+- plugins/: CNavEventTest, CNavEventThreadTest, TripFileLogger_Test
+- Mocks: SensorDataReaderMock.h, ipc_mock/
+- Fakes: UtFake_calibrator.h, properties_stub.cpp, AndroidTraceAdapter.h
+- Run: navsensors_unit-test_linux-x86_64_aborting.sh, coverage: coverageReportGen.sh
+
+### VTS Tests (vts/ directory)
+- gnss/: VtsHalBoschGnssTargetTest.cpp — full GNSS HAL VTS (connected variant)
+- sensors/: VtsHalBoschSensorsTargetTest.cpp — Sensors HAL VTS
+- gmlocation/: VtsHalBoschGmLocationTargetTest.cpp — GMLocation VTS
+- Run: vts -m VtsHalBoschGnssTargetTest | VtsHalBoschSensorsTargetTest | VtsHalBoschGmLocationTargetTest`;
+}
+
+// ── MAIN SEND ─────────────────────────────────────────────
+async function send() {
+  if(busy) return;
+  const qi=document.getElementById('qi');
+  // No client-side key — proxy reads BMF_API_KEY from environment
+  const q=qi.value.trim();
+  if(!q) return;
+
+  // Start session if needed
+  if(!activeSessionId) startNewSession(q);
+
+  showArea();
+  qi.value=''; qi.style.height='auto';
+  busy=true; document.getElementById('sb').disabled=true;
+
+  const hasPendingImage=!!pendingImageB64;
+  const pendingImgSrc=pendingImageB64;
+  const hasPendingFile=!!pendingFileText;
+  const fileContent=pendingFileText;
+  const fileName=pendingFileName;
+
+  // Build user bubble HTML
+  let userBubbleHtml=escHtml(q).replace(/\n/g,'<br>');
+  if(hasPendingImage) userBubbleHtml=`<img src="${pendingImgSrc}" style="max-height:80px;border-radius:4px;display:block;margin-bottom:6px" alt="${escHtml(pendingImageName)}"/>${userBubbleHtml}`;
+  if(hasPendingFile) userBubbleHtml=`<span style="font-size:11px;color:var(--txt3);display:block;margin-bottom:4px">${fileIcon(fileName)} ${escHtml(fileName)}</span>${userBubbleHtml}`;
+  addMsg('user', userBubbleHtml);
+
+  // Build text for conv history (text-only)
+  let convText=q;
+  if(hasPendingFile) convText=`[File: ${fileName}]\n${fileContent.slice(0,8000)}\n\n${q}`;
+  conv.push({role:'user',content:convText});
+
+  if(hasPendingImage) clearImage();
+  if(hasPendingFile) clearFile();
+
+  const currentSteps=generateAgentThoughtSteps(q+(hasPendingFile?' log file document':'')+(hasPendingImage?' image':''));
+  addTypingWithSteps(currentSteps);
+
+
+
+  try {
+    // Build final user content (with optional image)
+    let userContent;
+    if(hasPendingImage){
+      userContent=[{type:'image_url',image_url:{url:pendingImgSrc}},{type:'text',text:convText}];
+    } else {
+      userContent=convText;
+    }
+
+    const payload={
+      model:MODEL,
+      messages:[
+        {role:'system',content:buildSystem()},
+        ...conv.slice(0,-1),
+        {role:'user',content:userContent}
+      ]
+    };
+    if(MODEL.includes('o3')||MODEL.includes('gpt-5')) payload.max_completion_tokens=MAX_TOKENS;
+    else { payload.max_tokens=MAX_TOKENS; payload.temperature=0.7; }
+
+    const res=await fetch(BMF_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok){const t=await res.text();throw new Error(`HTTP ${res.status} — ${t.slice(0,300)}`);}
+
+    const data=await res.json();
+    let raw='';
+    if(data.choices&&data.choices.length>0){
+      const ch=data.choices[0];
+      if(ch.message&&typeof ch.message.content==='string') raw=ch.message.content;
+      else if(ch.message&&Array.isArray(ch.message.content)) raw=ch.message.content.map(x=>x.text||x.content||'').join('');
+      else if(typeof ch.text==='string') raw=ch.text;
+    }
+    if(!raw||!raw.trim()) throw new Error(`Empty response (finish_reason: ${data.choices?.[0]?.finish_reason||'unknown'}). Try a different model.`);
+
+    conv.push({role:'assistant',content:raw});
+    rmTyping();
+    addMsg('bot',renderMd(raw),inferSrc(raw),currentSteps);
+    updateTokenInfo();
+    setStatus('online');
+    updateActiveSession();
+
+  } catch(err){
+    rmTyping();
+    const isNet=err.message.includes('Failed to fetch')||err.message.includes('NetworkError');
+    addMsg('bot', isNet
+      ?'⚠️ <strong>Network error</strong> — make sure Bosch VPN is connected and proxy is running.<br><br>• Run: <code>$env:BMF_API_KEY="YOUR_KEY"; python bmf_proxy.py</code><br>• Open: <a href="http://localhost:5000/" target="_blank">http://localhost:5000/</a>'
+      :`⚠️ <strong>BMF error:</strong> <code>${escHtml(err.message.slice(0,400))}</code><br>Try switching models in the dropdown.`);
+    setStatus('offline');
+  }
+
+  busy=false; document.getElementById('sb').disabled=false; qi.focus();
+}
+
+// Init
+renderHistList();
+</script>
+</body>
+</html>
